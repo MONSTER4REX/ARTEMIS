@@ -664,21 +664,22 @@
 
                 let actions = [];
                 if (task === 'false_positive_triage') {
-                    actions = [
-                        { action_type: 'fetch_logs', user_id: first_user, reason: "Checking travel status" },
-                        { action_type: 'resolve_alert', alert_id: first_id, reason: "Verified false positive." }
-                    ];
+                    alerts.forEach(alert => {
+                        if (alert.source_user) actions.push({ action_type: 'fetch_logs', user_id: alert.source_user, reason: "Checking context" });
+                        else if (alert.source_ip) actions.push({ action_type: 'fetch_logs', ip_address: alert.source_ip, reason: "Checking context" });
+                        actions.push({ action_type: 'resolve_alert', alert_id: alert.id, reason: "Verified false positive." });
+                    });
                 } else if (task === 'brute_force_defense') {
-                    actions = [
-                        { action_type: 'isolate_ip', ip_address: first_ip, reason: "Blocking attacker IP." },
-                        { action_type: 'isolate_user', user_id: first_user || "admin", reason: "Securing compromised account." }
-                    ];
+                    alerts.forEach(alert => {
+                        if (alert.source_ip) actions.push({ action_type: 'isolate_ip', ip_address: alert.source_ip, reason: "Blocking attacker IP." });
+                        if (alert.source_user) actions.push({ action_type: 'isolate_user', user_id: alert.source_user, reason: "Securing compromised account." });
+                    });
                 } else {
-                    actions = [
-                        { action_type: 'fetch_logs', ip_address: first_ip, reason: "Investigating context" },
-                        { action_type: 'isolate_user', user_id: first_user, reason: "Pivot detected, isolating account." },
-                        { action_type: 'isolate_ip', ip_address: first_ip, reason: "Isolating infected dev machine." }
-                    ];
+                    alerts.forEach(alert => {
+                        if (alert.source_user) actions.push({ action_type: 'fetch_logs', user_id: alert.source_user, reason: "Investigating pivot" });
+                        if (alert.source_ip) actions.push({ action_type: 'isolate_ip', ip_address: alert.source_ip, reason: "Isolating infected machine." });
+                        if (alert.source_user) actions.push({ action_type: 'isolate_user', user_id: alert.source_user, reason: "Isolating compromised account." });
+                    });
                 }
 
                 for (let i = 0; i < actions.length; i++) {
