@@ -350,12 +350,14 @@
             display: none;
             flex-direction: column;
             align-items: center;
+            width: 100%;
+            padding: 2rem 0;
         }
         .circular-chart {
             display: block;
             margin: 0 auto;
-            max-width: 160px;
-            max-height: 160px;
+            width: 160px;
+            height: 160px;
             filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.2));
         }
         .circle-bg {
@@ -394,10 +396,9 @@
             background: #09090b; /* zinc-950 */
             border-radius: 12px;
             border: 1px solid var(--card-border);
-            height: 100%;
             display: flex;
             flex-direction: column;
-            min-height: 400px;
+            height: 480px; /* Fixed height! */
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             overflow: hidden;
         }
