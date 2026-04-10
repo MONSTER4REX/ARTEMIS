@@ -2,7 +2,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
-from .graders import TaskGrader, compute_final_score
+from .graders import compute_final_score
 from .models import (
     ActionType,
     AlertStatus,

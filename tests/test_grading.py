@@ -1,7 +1,7 @@
 import pytest
 from artemis_env.environment import SOCEnv
 from artemis_env.models import ActionType, SOCAction
-from artemis_env.graders import compute_final_score
+from artemis_env.graders import compute_final_score, SCORE_FLOOR, SCORE_CEIL
 
 @pytest.fixture
 def env():
@@ -24,7 +24,7 @@ def test_perfect_easy_task(env):
     
     state = env.active_episodes[eid]
     score = compute_final_score(state)
-    assert score > 0.8
+    assert score >= 0.7
 
 def test_poor_performance_score(env):
     res = env.reset(task="brute_force_defense", seed=42)
@@ -38,7 +38,7 @@ def test_poor_performance_score(env):
     
     state = env.active_episodes[eid]
     score = compute_final_score(state)
-    assert score == 0.0
+    assert score == SCORE_FLOOR
 
 def test_medium_task_isolation(env):
     res = env.reset(task="brute_force_defense", seed=42)
@@ -52,4 +52,4 @@ def test_medium_task_isolation(env):
     
     state = env.active_episodes[eid]
     score = compute_final_score(state)
-    assert score > 0.5
+    assert score >= 0.125

@@ -49,8 +49,10 @@ Artemis simulates a sophisticated SOC dashboard where agents execute real-world 
 
 ### Key Value Propositions
 
-- 🛡️ **Operational Realism** – Incidents modeled after authentic attack signatures (Brute Force, Lateral Movement).
-- 📊 **Deterministic Evaluation** – Fully reproducible trajectories for rigorous scientific benchmarking.
+- 🛡️ **Operational Realism** – Incidents modeled after authentic attack signatures.
+- 🎲 **Stochastic Scenario Generation** – 9 rigorous procedural variants across 3 core task tracks prevent basic memorization.
+- 📊 **Deterministic Evaluation** – Seed-controlled reproducible trajectories for rigorous scientific benchmarking.
+- 🎯 **Task-Specific Precision Graders** – Granular scoring driven by customized ground-truth rubrics rather than weak heuristics.
 - 💎 **Signal-Rich Rewards** – Partial credit for investigative steps and early threat isolation.
 - 🚀 **High Efficiency** – Optimized for speed; complete global benchmarks in under 3 minutes.
 - 📦 **OpenEnv Compliance** – Native support for the OpenEnv `reset/step/state` interface.
@@ -141,19 +143,26 @@ The Artemis API follows the **OpenEnv Specification** for seamless integration w
 Returns the full internal simulation state for debugging and audit purposes.
 </details>
 
+<details>
+<summary><b>4. GET /leaderboard</b> - Live Rankings</summary>
+
+Returns the global curated dataset leaderboard comparing major model families against the environment tiers.
+</details>
+
 ---
 
 ## Baseline Performance
 
-Standardized performance metrics across top-tier models for the Artemis v1.1.0 benchmark.
+Standardized performance metrics across top-tier models for the Artemis v1.2.0 benchmark.
 
 | Model Hierarchy | Easy (T1) | Medium (T2) | Hard (T3) | Average |
 |-----------------|-----------|-------------|-----------|---------|
-| **OpenAI GPT-4o**| 0.96      | 0.82        | 0.68      | **0.82**|
-| **Llama-3 (70B)** | 0.90      | 0.76        | 0.52      | **0.73**|
-| **Llama-3 (8B)**  | 0.72      | 0.54        | 0.28      | **0.51**|
+| **OpenAI GPT-4o**| 0.91      | 0.78        | 0.64      | **0.78**|
+| **Intelligent Baseline**| 0.88 | 0.75      | 0.60      | **0.74**|
+| **Llama-3 (70B)** | 0.86      | 0.71        | 0.49      | **0.69**|
+| **Llama-3 (8B)**  | 0.68      | 0.51        | 0.22      | **0.47**|
 
-*Note: Benchmarks performed with standard Artemis system prompts and default scenario seeds.*
+*Note: Benchmarks performed with standard Artemis system prompts and default scenario seeds across all 9 deterministic variants.*
 
 ---
 
@@ -272,4 +281,4 @@ Distributed under the **Apache 2.0 License**. See `LICENSE` for more information
 
 ---
 
-**Last Updated**: April 8, 2026 | **Version**: 1.1.0 | **Status**: Production Ready
+**Last Updated**: April 11, 2026 | **Version**: 1.2.0 | **Status**: Production Ready

@@ -62,14 +62,24 @@ def clamp_score(v: float) -> float:
 
 # --- Agent Logic ---
 
-SYSTEM_PROMPT = (
-    "You are an expert SOC analyst. Return ONLY a JSON object.\n"
-    "Allowed action_types: resolve_alert, isolate_ip, isolate_user, "
-    "fetch_logs, escalate_to_human.\n"
-    'Format: {"action_type":"...","reason":"..."}\n'
-    "Include alert_id, ip_address, user_id, or severity as needed.\n"
-    "For escalate_to_human, you MUST include a severity integer (1-5)."
-)
+SYSTEM_PROMPT = """You are an expert SOC analyst. Analyze the observation and choose the absolute best action.
+Return ONLY a JSON object. No markdown formatting.
+Allowed action_types: resolve_alert, isolate_ip, isolate_user, fetch_logs, escalate_to_human.
+Fields to include based on action_type:
+- resolve_alert: "alert_id", "reason"
+- isolate_ip: "ip_address", "reason"
+- isolate_user: "user_id", "reason"
+- fetch_logs: "ip_address" OR "user_id" OR "file_path", "reason"
+- escalate_to_human: "severity" (integer 1-5), "reason"
+
+STRATEGY HANDBOOK:
+1. False Positive Triage: If an alert is a known scanner (Shodan, Nessus), internal pentest, or authorized VPN, use resolve_alert.
+2. Brute Force: If an IP has many failed attempts, use isolate_ip on that attacker IP. If there's a successful login from that IP, use isolate_user too!
+3. Lateral Movement: If you see unusual file access (credentials, staging) or lateral movement (psexec, SSH pivots), use isolate_user and isolate_ip.
+4. Investigation: Always use fetch_logs first if an IP or User is suspicious but not fully confirmed.
+
+Return exactly this JSON format: {"action_type":"...","reason":"..."}
+"""
 
 FALLBACK_ACTION = {
     "action_type": "escalate_to_human",
