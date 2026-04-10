@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Artemis SOC Triage Benchmark API",
     description="A simulator for evaluating AI agents in security alert triage scenarios.",
-    version="1.1.0",
+    version="1.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
@@ -45,7 +45,7 @@ async def root():
         return FileResponse(index_path)
     return {
         "status": "online",
-        "benchmark": "Artemis v1.1.0",
+        "benchmark": "Artemis v1.2.0",
         "message": "Dashboard UI not found. Use /status for machine-readable state."
     }
 
@@ -53,7 +53,7 @@ async def root():
 async def status_check():
     return {
         "status": "online",
-        "benchmark": "Artemis v1.1.0",
+        "benchmark": "Artemis v1.2.0",
         "active_episodes": len(env.active_episodes)
     }
 
