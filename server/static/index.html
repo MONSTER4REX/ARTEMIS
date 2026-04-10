@@ -327,6 +327,7 @@
             padding: 1rem;
             border-radius: 12px;
             border: 1px solid var(--border);
+            flex-wrap: wrap;
         }
 
         .task-select {
@@ -656,22 +657,27 @@
                 // But truthfully, the "Intelligent Baseline" prompt handles it. Since we can't run the python inference 
                 // easily from browser JS without triggering it back end server side (which we haven't built), we'll simulate.
                 
+                const alerts = resetData.observation.current_alerts || [];
+                const first_ip = alerts.length > 0 ? alerts[0].source_ip : '';
+                const first_user = alerts.length > 0 ? alerts[0].source_user : '';
+                const first_id = alerts.length > 0 ? alerts[0].id : '';
+
                 let actions = [];
                 if (task === 'false_positive_triage') {
                     actions = [
-                        { action_type: 'fetch_logs', user_id: 'james_smith', reason: "Checking travel status" },
-                        { action_type: 'resolve_alert', alert_id: resetData.observation.current_alerts[0].id, reason: "Verified false positive." }
+                        { action_type: 'fetch_logs', user_id: first_user, reason: "Checking travel status" },
+                        { action_type: 'resolve_alert', alert_id: first_id, reason: "Verified false positive." }
                     ];
                 } else if (task === 'brute_force_defense') {
                     actions = [
-                        { action_type: 'isolate_ip', ip_address: '203.0.113.1', reason: "Blocking attacker IP." },
-                        { action_type: 'isolate_user', user_id: 'admin', reason: "Securing compromised account." }
+                        { action_type: 'isolate_ip', ip_address: first_ip, reason: "Blocking attacker IP." },
+                        { action_type: 'isolate_user', user_id: first_user || "admin", reason: "Securing compromised account." }
                     ];
                 } else {
                     actions = [
-                        { action_type: 'fetch_logs', ip_address: '192.168.50.100', reason: "Investigating context" },
-                        { action_type: 'isolate_user', user_id: 'sarah_dev', reason: "Pivot detected, isolating account." },
-                        { action_type: 'isolate_ip', ip_address: '10.0.0.5', reason: "Isolating infected dev machine." }
+                        { action_type: 'fetch_logs', ip_address: first_ip, reason: "Investigating context" },
+                        { action_type: 'isolate_user', user_id: first_user, reason: "Pivot detected, isolating account." },
+                        { action_type: 'isolate_ip', ip_address: first_ip, reason: "Isolating infected dev machine." }
                     ];
                 }
 
@@ -687,7 +693,8 @@
                     });
                     const stepData = await stepRes.json();
                     
-                    addLog(`Reward: <span class="type-reward">+${stepData.reward.toFixed(2)}</span> | Done: ${stepData.done}`, 'step');
+                    const rewStr = stepData.reward > 0 ? '+' + stepData.reward.toFixed(2) : stepData.reward.toFixed(2);
+                    addLog(`Reward: <span class="type-reward">${rewStr}</span> | Done: ${stepData.done}`, 'step');
                     inspector.textContent = JSON.stringify(stepData.observation, null, 2);
                 }
 
