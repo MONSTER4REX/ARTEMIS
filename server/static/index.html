@@ -156,6 +156,7 @@
             margin-bottom: 1.25rem;
             background: linear-gradient(180deg, #FFFFFF 0%, #9CA3AF 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: -0.04em;
         }
@@ -715,6 +716,28 @@
         
         loadLeaderboard();
 
+        // UI State Controller
+        function setEvaluatorState(state, data = null) {
+            emptyState.style.display = 'none';
+            inspector.style.display = 'none';
+            gaugeContainer.style.display = 'none';
+
+            if (state === 'idle') {
+                emptyState.style.display = 'flex';
+            } else if (state === 'pending') {
+                emptyState.style.display = 'flex';
+                emptyState.innerHTML = '<span class="log-sys">Analyzing Environment Data...</span>';
+            } else if (state === 'investigating') {
+                inspector.style.display = 'block';
+                if (data) inspector.textContent = JSON.stringify(data, null, 2);
+            } else if (state === 'grading') {
+                emptyState.style.display = 'flex';
+                emptyState.innerHTML = '<span class="log-done">Finalizing Grading...</span>';
+            } else if (state === 'scored') {
+                gaugeContainer.style.display = 'flex';
+            }
+        }
+
         function addLog(htmlString) {
             const entry = document.createElement('div');
             entry.className = `log-entry`;
@@ -726,21 +749,14 @@
         function clearLogs() {
             terminal.innerHTML = '';
             addLog('<span class="log-sys">Cache cleared. Memory reset.</span>');
-            
-            // Reset Inspector View
-            inspector.style.display = 'none';
-            gaugeContainer.style.display = 'none';
-            emptyState.style.display = 'flex';
+            setEvaluatorState('idle');
             gaugePath.setAttribute('stroke-dasharray', `0, 100`);
+            emptyState.innerHTML = '// Standby. Awaiting execution trigger...';
         }
 
         async function runExpertDemo() {
             runBtn.disabled = true;
-            
-            // UI State switch to JSON view
-            emptyState.style.display = 'none';
-            gaugeContainer.style.display = 'none';
-            inspector.style.display = 'block';
+            setEvaluatorState('pending');
             
             const task = taskSelect.value;
             const seed = Math.floor(Math.random() * 1000); 
@@ -756,7 +772,7 @@
                 const epId = resetData.episode_id;
                 
                 addLog(`<span class="log-sys">Connection established. EpID: <b>${epId}</b>. Procedural variant loaded.</span>`);
-                inspector.textContent = JSON.stringify(resetData.observation, null, 2);
+                setEvaluatorState('investigating', resetData.observation);
 
                 const alerts = resetData.observation.current_alerts || [];
                 let actions = [];
@@ -813,10 +829,11 @@
                     const rewStr = stepData.reward > 0 ? '+' + stepData.reward.toFixed(2) : stepData.reward.toFixed(2);
                     
                     addLog(`Received Reward: <span class="${rewClass}">${rewStr}</span>`);
-                    inspector.textContent = JSON.stringify(stepData.observation, null, 2);
+                    setEvaluatorState('investigating', stepData.observation);
                 }
 
                 await new Promise(r => setTimeout(r, 600));
+                setEvaluatorState('grading');
                 
                 const gradeRes = await fetch('/grade', {
                     method: 'POST',
@@ -828,9 +845,7 @@
                 const score = gradeData.score;
                 addLog(`<div class="log-done">EVALUATION COMPLETE | FINAL RAW SCORE: ${score.toFixed(3)}</div>`);
                 
-                // Show Gauge
-                inspector.style.display = 'none';
-                gaugeContainer.style.display = 'flex';
+                setEvaluatorState('scored');
                 
                 let roundedPercent = Math.round(score * 100);
                 
