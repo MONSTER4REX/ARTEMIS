@@ -21,7 +21,7 @@ def compute_reward(action: SOCAction, state: EpisodeState) -> Reward:
             action_reward = 0.5
             explanation = f"Resolved ambiguous alert '{action.alert_id}' based on travel context."
         else:
-            action_reward = 0.0
+            action_reward = 0.05
             explanation = f"Resolved existing alert '{action.alert_id}'."
     elif action.action_type == ActionType.ISOLATE_IP:
         if action.ip_address in ground_truth.attacker_ips:
@@ -59,7 +59,7 @@ def compute_reward(action: SOCAction, state: EpisodeState) -> Reward:
                 action_reward = 0.1
                 explanation = f"Fetched additional logs for investigation."
         else:
-            action_reward = 0.0
+            action_reward = 0.05
             explanation = f"Already fetched these logs."
     elif action.action_type == ActionType.ESCALATE_TO_HUMAN:
         if ground_truth.is_ambiguous:

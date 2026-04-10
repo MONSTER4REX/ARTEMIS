@@ -4,6 +4,9 @@ import json
 import requests
 from openai import OpenAI
 
+SCORE_FLOOR = 0.01
+SCORE_CEIL = 0.99
+
 # --- Required Environment Variables ---
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4-0125-preview")
@@ -33,24 +36,28 @@ def log_start(task: str, env: str, model: str):
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
 
-def log_step(step: int, action: str, reward: float, done: bool, error=None):
+def log_step(step: int, action: str, reward: float, done: bool, score=None, error=None):
     error_str = "null"
     if error is not None:
         error_str = str(error).replace("\n", " ").replace("\r", " ").strip()
+    score_str = f" score={score:.4f}" if score is not None else ""
     print(
         f"[STEP] step={step} action={action} "
-        f"reward={reward:.2f} done={str(done).lower()} "
+        f"reward={reward:.4f} done={str(done).lower()}{score_str} "
         f"error={error_str}",
         flush=True,
     )
 
 
-def log_end(success: bool, steps: int, rewards: list):
-    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+def log_end(success: bool, steps: int, score: float):
     print(
-        f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} score={score:.4f}",
         flush=True,
     )
+
+
+def clamp_score(v: float) -> float:
+    return max(SCORE_FLOOR, min(SCORE_CEIL, v))
 
 
 # --- Agent Logic ---
@@ -60,8 +67,15 @@ SYSTEM_PROMPT = (
     "Allowed action_types: resolve_alert, isolate_ip, isolate_user, "
     "fetch_logs, escalate_to_human.\n"
     'Format: {"action_type":"...","reason":"..."}\n'
-    "Include alert_id, ip_address, user_id, or severity as needed."
+    "Include alert_id, ip_address, user_id, or severity as needed.\n"
+    "For escalate_to_human, you MUST include a severity integer (1-5)."
 )
+
+FALLBACK_ACTION = {
+    "action_type": "escalate_to_human",
+    "reason": "Agent fallback: unable to determine action",
+    "severity": 3,
+}
 
 
 def get_llm_action(observation: dict) -> dict:
@@ -79,14 +93,20 @@ def get_llm_action(observation: dict) -> dict:
         )
         content = response.choices[0].message.content
         if content:
-            return json.loads(content)
-        return {"action_type": "escalate_to_human", "reason": "empty response"}
+            parsed = json.loads(content)
+            if parsed.get("action_type") == "escalate_to_human" and "severity" not in parsed:
+                parsed["severity"] = 3
+            if "reason" not in parsed or not parsed["reason"]:
+                parsed["reason"] = "LLM action"
+            return parsed
+        return dict(FALLBACK_ACTION)
     except Exception as e:
-        return {"action_type": "escalate_to_human", "reason": str(e)}
+        fallback = dict(FALLBACK_ACTION)
+        fallback["reason"] = f"LLM error: {str(e)[:200]}"
+        return fallback
 
 
 def compact(obj: dict) -> str:
-    """Single-line JSON string safe for stdout."""
     return json.dumps(obj, separators=(",", ":"), ensure_ascii=False)
 
 
@@ -99,7 +119,7 @@ ALL_TASKS = [
 ]
 
 
-def run_episode(task: str):
+def run_episode(task: str) -> float:
     env_name = "artemis"
     max_steps = 8
 
@@ -108,11 +128,12 @@ def run_episode(task: str):
     rewards: list[float] = []
     steps = 0
     success = False
-    score = None
+    score = SCORE_FLOOR
+    episode_id = None
 
     try:
         reset_res = requests.post(
-            f"{ENV_URL}/reset", json={"task": task}, timeout=15
+            f"{ENV_URL}/reset", json={"task": task}, timeout=30
         )
         reset_res.raise_for_status()
         reset_data = reset_res.json()
@@ -125,30 +146,36 @@ def run_episode(task: str):
             action_obj = get_llm_action(observation)
             action_str = compact(action_obj)
 
-            step_res = requests.post(
-                f"{ENV_URL}/step",
-                json={"episode_id": episode_id, "action": action_obj},
-                timeout=15,
-            )
-            step_res.raise_for_status()
-            step_data = step_res.json()
+            try:
+                step_res = requests.post(
+                    f"{ENV_URL}/step",
+                    json={"episode_id": episode_id, "action": action_obj},
+                    timeout=30,
+                )
+                step_res.raise_for_status()
+                step_data = step_res.json()
+            except Exception as step_err:
+                log_step(steps, action_str, 0.0, False, error=str(step_err))
+                continue
 
             reward = float(step_data.get("reward", 0.0))
             done = bool(step_data.get("done", False))
             error = step_data.get("error", None)
             observation = step_data.get("observation", observation)
+            step_score = step_data.get("score", None)
 
             rewards.append(reward)
 
-            log_step(steps, action_str, reward, done, error)
+            log_step(steps, action_str, reward, done, score=step_score, error=error)
 
             if done:
-                score = step_data.get("score", None)
+                if step_score is not None:
+                    score = clamp_score(float(step_score))
                 success = sum(rewards) > 0.0
                 break
 
-        # Fetch graded score from the /grade endpoint
-        if score is None:
+        # Fetch graded score from the /grade endpoint if we have an episode
+        if episode_id is not None:
             try:
                 grade_res = requests.post(
                     f"{ENV_URL}/grade",
@@ -156,21 +183,19 @@ def run_episode(task: str):
                     timeout=10,
                 )
                 if grade_res.status_code == 200:
-                    score = grade_res.json().get("score", None)
+                    grade_score = grade_res.json().get("score", None)
+                    if grade_score is not None:
+                        score = clamp_score(float(grade_score))
             except Exception:
                 pass
 
-        if score is not None:
-            print(
-                f"[SCORE] task={task} score={score:.4f}",
-                flush=True,
-            )
-
     except Exception as e:
-        log_step(max(1, steps + 1), "error", 0.0, True, str(e))
+        log_step(max(1, steps + 1), "error", 0.0, True, error=str(e))
 
     finally:
-        log_end(success=success, steps=steps, rewards=rewards)
+        score = clamp_score(score)
+        log_end(success=success, steps=steps, score=score)
+        print(f"[SCORE] task={task} score={score:.4f}", flush=True)
 
     return score
 
@@ -183,8 +208,7 @@ def main():
         scores[task] = task_score
     print("[SUMMARY]", flush=True)
     for t, s in scores.items():
-        status_str = f"{s:.4f}" if s is not None else "FAILED"
-        print(f"  {t}: {status_str}", flush=True)
+        print(f"  {t}: {s:.4f}", flush=True)
 
 
 if __name__ == "__main__":
