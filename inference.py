@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import requests
 from openai import OpenAI
@@ -10,9 +11,20 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 ENV_URL = os.getenv("ENV_URL", "http://localhost:7860")
 
 if HF_TOKEN is None:
-    raise ValueError("HF_TOKEN environment variable is required")
+    print("[FATAL] HF_TOKEN environment variable is required", flush=True)
+    sys.exit(1)
 
-client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+try:
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+except TypeError as e:
+    print(
+        f"[FATAL] OpenAI client init failed (likely openai/httpx version mismatch): {e}",
+        flush=True,
+    )
+    sys.exit(1)
+except Exception as e:
+    print(f"[FATAL] OpenAI client init failed: {e}", flush=True)
+    sys.exit(1)
 
 
 # --- Standard OpenEnv Logging API ---
