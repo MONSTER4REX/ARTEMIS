@@ -4,23 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Artemis | OpenEnv SOC Triage</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0d1117;
-            --surface: #161b22;
-            --surface-hover: #21262d;
-            --primary: #58a6ff;
-            --primary-glow: rgba(88, 166, 255, 0.4);
-            --success: #3fb950;
-            --danger: #f85149;
-            --warning: #d29922;
-            --text: #c9d1d9;
-            --text-dim: #8b949e;
-            --border: #30363d;
-            --border-glow: rgba(48, 54, 61, 0.8);
-            --accent: #1f6feb;
-            --glass: rgba(22, 27, 34, 0.7);
+            --bg-color: #030712; /* Very dark gray/blue */
+            --card-bg: rgba(17, 24, 39, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --card-hover-border: rgba(255, 255, 255, 0.15);
+            
+            --text-main: #F9FAFB;
+            --text-muted: #9CA3AF;
+            
+            --primary: #6366f1; /* Indigo */
+            --primary-hover: #4f46e5;
+            --secondary: #0ea5e9; /* Light blue */
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
         }
 
         * {
@@ -30,562 +32,654 @@
         }
 
         body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
             line-height: 1.6;
+            min-height: 100vh;
             overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(31, 111, 235, 0.1), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(88, 166, 255, 0.1), transparent 25%);
+            position: relative;
+        }
+
+        /* Ambient Glow Effects */
+        .ambient-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.15;
+            animation: pulse-glow 8s ease-in-out infinite alternate;
+        }
+        @keyframes pulse-glow {
+            0% { transform: scale(1); opacity: 0.15; }
+            100% { transform: scale(1.1); opacity: 0.25; }
+        }
+        .glow-1 {
+            background: var(--primary);
+            top: -200px;
+            left: -100px;
+        }
+        .glow-2 {
+            background: var(--secondary);
+            bottom: -200px;
+            right: -100px;
+            animation-delay: -4s;
         }
 
         .container {
-            max-width: 1300px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
 
+        /* Top Bar */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 3rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            position: relative;
-        }
-        
-        header::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 15%;
-            height: 1px;
-            background: var(--primary);
-            box-shadow: 0 0 10px var(--primary-glow);
+            padding: 1rem 0 2rem 0;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 4rem;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 1rem;
-        }
-
-        .logo h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.8rem;
-            font-weight: 700;
+            gap: 0.75rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
             letter-spacing: -0.03em;
-            color: #fff;
-            background: linear-gradient(135deg, #fff, #a0c0ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
-
+        
         .logo-icon {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, var(--accent), var(--primary));
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
+            display: inline-flex;
             justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: #fff;
-            box-shadow: 0 4px 12px var(--primary-glow);
+            align-items: center;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 8px;
+            color: white;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
         .status-badge {
             display: flex;
             align-items: center;
-            gap: 0.6rem;
-            font-size: 0.85rem;
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(46, 160, 67, 0.1);
-            padding: 0.5rem 1rem;
-            border-radius: 100px;
-            border: 1px solid rgba(63, 185, 80, 0.2);
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
             color: var(--success);
+            padding: 0.35rem 0.8rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
         }
 
-        .pulse {
-            width: 8px;
-            height: 8px;
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--success);
             border-radius: 50%;
-            background: var(--success);
-            box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7);
-            animation: pulse 2s infinite;
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(63, 185, 80, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(63, 185, 80, 0); }
-        }
-
+        /* Hero */
         .hero {
-            margin-bottom: 3rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            text-align: center;
+            margin-bottom: 4rem;
+            animation: slideUp 0.6s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .hero-text {
-            flex: 1;
-        }
-
-        .hero h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 3.5rem;
+        .hero h1 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 4.5rem;
             font-weight: 800;
             line-height: 1.1;
-            margin-bottom: 1rem;
-            color: #fff;
+            margin-bottom: 1.25rem;
+            background: linear-gradient(180deg, #FFFFFF 0%, #9CA3AF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.04em;
         }
 
         .hero p {
-            font-size: 1.1rem;
-            color: var(--text-dim);
-            max-width: 500px;
+            color: var(--text-muted);
+            font-size: 1.125rem;
+            max-width: 600px;
+            margin: 0 auto 2.5rem auto;
         }
-        
+
         .hero-stats {
             display: flex;
             gap: 1.5rem;
+            justify-content: center;
         }
-        
-        .stat-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.2rem;
-            min-width: 140px;
-            text-align: center;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-            transition: transform 0.3s;
+
+        .stat-pill {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            padding: 0.6rem 1.5rem;
+            border-radius: 99px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        
-        .stat-box:hover {
-            transform: translateY(-5px);
-            border-color: var(--primary);
-        }
-        
-        .stat-value {
-            font-family: 'Outfit', sans-serif;
-            font-size: 2rem;
+        .stat-pill span {
+            color: var(--text-main);
             font-weight: 700;
-            color: #fff;
+            font-size: 1.1rem;
         }
-        
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-dim);
+
+        /* Dashboard Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        .card-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            padding: 1.75rem;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+            transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+        .card:hover {
+            border-color: var(--card-hover-border);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .card-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+        .card-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-
-        .card {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.8rem;
+        /* Controls */
+        .controls-group {
             display: flex;
             flex-direction: column;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .card::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, var(--primary), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        
-        .card:hover::before {
-            opacity: 1;
+            gap: 1rem;
         }
 
-        .card-header {
-            margin-bottom: 1.5rem;
+        select {
+            width: 100%;
+            appearance: none;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        select:focus, select:hover {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-group {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #fff;
+            gap: 0.75rem;
         }
 
         .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 0.95rem;
-            box-shadow: 0 4px 12px rgba(31, 111, 235, 0.3);
-        }
-
-        .btn:hover {
-            background: #2b84ff;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(31, 111, 235, 0.4);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-            box-shadow: none;
-        }
-
-        .btn-outline:hover {
-            border-color: var(--text-dim);
-            background: rgba(255,255,255,0.05);
-        }
-
-        .terminal {
-            font-family: 'JetBrains Mono', monospace;
-            background: #010409;
+            flex: 1;
+            padding: 1rem;
             border-radius: 12px;
-            padding: 1.5rem;
-            font-size: 0.85rem;
-            height: 450px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+            filter: brightness(1.1);
+        }
+        .btn-primary:disabled {
+            background: #374151;
+            color: #9CA3AF;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+            filter: none;
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--card-hover-border);
+        }
+
+        /* Inspector / Gauge Card */
+        .state-container {
+            min-height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .inspector {
+            width: 100%;
+            background: #000;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #7dd3fc; /* light blue */
+            white-space: pre-wrap;
             overflow-y: auto;
-            border: 1px solid var(--border);
+            max-height: 220px;
+            display: none;
+        }
+        
+        .empty-state {
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Modern SVG Gauge */
+        .gauge-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        .circular-chart {
+            display: block;
+            margin: 0 auto;
+            max-width: 160px;
+            max-height: 160px;
+            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.2));
+        }
+        .circle-bg {
+            fill: none;
+            stroke: rgba(255,255,255,0.05);
+            stroke-width: 2.5;
+        }
+        .circle {
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            transition: stroke-dasharray 1.5s ease-out, stroke 0.3s;
+        }
+        .percentage {
+            fill: #fff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.6em;
+            font-weight: 800;
+            text-anchor: middle;
+        }
+        .score-lbl {
+            fill: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.18em;
+            text-anchor: middle;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .score-excellent { stroke: var(--success); filter: drop-shadow(0 0 8px var(--success)); }
+        .score-good { stroke: var(--warning); filter: drop-shadow(0 0 8px var(--warning)); }
+        .score-poor { stroke: var(--danger); filter: drop-shadow(0 0 8px var(--danger)); }
+
+        /* Terminal Window */
+        .terminal-window {
+            background: #09090b; /* zinc-950 */
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        .terminal-header {
+            background: #18181b; /* zinc-900 */
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .mac-dots {
+            display: flex;
+            gap: 6px;
+        }
+        .mac-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .mac-dot.close { background-color: #ff5f56; }
+        .mac-dot.min { background-color: #ffbd2e; }
+        .mac-dot.max { background-color: #27c93f; }
+        
+        .terminal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-left: -40px; /* offset dots */
+        }
+
+        .terminal-body {
+            padding: 1.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            overflow-y: auto;
+            flex-grow: 1;
             scroll-behavior: smooth;
         }
 
         .log-entry {
-            margin-bottom: 0.6rem;
-            border-left: 2px solid transparent;
-            padding-left: 0.75rem;
-            animation: fadeIn 0.3s;
+            margin-bottom: 0.5rem;
+            animation: fadeIn 0.3s ease-out;
+            word-wrap: break-word;
         }
-        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateX(-5px); }
             to { opacity: 1; transform: translateX(0); }
         }
+        
+        .ts { color: #6b7280; }
+        .log-sys { color: var(--secondary); }
+        .log-cmd { color: #a78bfa; } /* Purple */
+        .log-rew-pos { color: var(--success); font-weight: bold; }
+        .log-rew-neg { color: var(--danger); font-weight: bold; background: var(--danger-bg); padding: 0 4px; border-radius: 4px; }
+        .log-done { color: var(--warning); font-weight: bold; font-size: 0.9rem; margin-top: 1rem; border-left: 2px solid var(--warning); padding-left: 8px;}
 
-        .log-ts { color: var(--text-dim); }
-        .log-type { font-weight: bold; }
-        .type-reset { color: var(--primary); border-left-color: var(--primary); background: rgba(88,166,255,0.05); }
-        .type-step { color: var(--accent); border-left-color: var(--accent); }
-        .type-reward { color: var(--success); font-weight: bold;}
-        .type-done { color: #f2cc60; font-weight: bold;}
-        .type-danger { color: var(--danger); border-left-color: var(--danger); background: rgba(248,81,73,0.05);}
-
-        .inspector {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            color: #79c0ff;
-            white-space: pre-wrap;
-            background: #010409;
-            padding: 1.2rem;
-            border-radius: 12px;
-            margin-top: 1.5rem;
-            border: 1px solid var(--border);
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            background: #010409;
-            padding: 1rem;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            flex-wrap: wrap;
-        }
-
-        .task-select {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 0.8rem 1rem;
-            border-radius: 8px;
-            flex-grow: 1;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: border-color 0.2s;
-            outline: none;
+        /* Leaderboard Table */
+        .leaderboard-card {
+            margin-top: 0;
+            padding: 2rem;
         }
         
-        .task-select:hover {
-            border-color: var(--text-dim);
+        .table-responsive {
+            overflow-x: auto;
         }
-
-        .leaderboard-table {
+        
+        table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 1rem;
+            border-collapse: collapse;
+            text-align: left;
         }
         
-        .leaderboard-table th {
-            text-align: left;
-            padding: 1rem;
-            font-size: 0.85rem;
-            color: var(--text-dim);
+        th {
+            font-size: 0.75rem;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--card-border);
         }
         
-        .leaderboard-table td {
-            padding: 1.2rem 1rem;
-            border-bottom: 1px solid var(--border);
+        td {
+            padding: 1.25rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
             font-size: 0.95rem;
         }
-        
-        .leaderboard-table tr:hover td {
-            background: rgba(255,255,255,0.02);
+        tr:last-child td {
+            border-bottom: none;
         }
         
-        .rank-badge {
-            background: var(--surface);
-            border: 1px solid var(--border);
+        tr:hover td {
+            background-color: rgba(255,255,255,0.02);
+        }
+        
+        .rank-wrapper {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
             width: 28px;
             height: 28px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-weight: bold;
-            font-family: 'Outfit';
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
         }
         
-        .rank-1 .rank-badge { border-color: #d29922; color: #d29922; background: rgba(210,153,34,0.1); box-shadow: 0 0 10px rgba(210,153,34,0.3);}
-        .rank-2 .rank-badge { border-color: #c9d1d9; color: #c9d1d9; background: rgba(201,209,217,0.1); }
-        .rank-3 .rank-badge { border-color: #f69d50; color: #f69d50; background: rgba(246,157,80,0.1); }
+        .rank-1 { color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); }
+        .rank-2 { color: #e5e7eb; background: rgba(229, 231, 235, 0.1); border: 1px solid rgba(229, 231, 235, 0.2); }
+        .rank-3 { color: #f97316; background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.2); }
+        
+        .model-name { font-weight: 600; color: #fff; }
+        .td-score { font-family: 'JetBrains Mono', monospace; color: var(--text-muted); }
+        .td-avg { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--success); }
 
-        ::-webkit-scrollbar { width: 8px; height: 8px;}
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
-        .footer {
-            margin-top: 5rem;
+        footer {
+            margin-top: 4rem;
             text-align: center;
-            color: var(--text-dim);
-            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
             padding-top: 2rem;
-            border-top: 1px solid var(--border);
+            border-top: 1px solid var(--card-border);
         }
-
-        .footer a {
+        footer a {
             color: var(--primary);
             text-decoration: none;
-            transition: color 0.2s;
         }
-        
-        .footer a:hover {
-            color: #fff;
+        footer a:hover {
+            text-decoration: underline;
         }
-
-        .model-name {
-            font-weight: 600;
-            color: #fff;
-        }
-        
-        .score-val {
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--primary);
-        }
-        
-        .score-avg {
-            font-weight: bold;
-            color: var(--success);
-        }
-
-        /* Gauge styles */
-        .gauge-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 2rem 0;
-            display: none;
-        }
-        
-        .circular-chart {
-            display: block;
-            margin: 0 auto;
-            max-width: 150px;
-            max-height: 150px;
-        }
-        
-        .circle-bg {
-            fill: none;
-            stroke: var(--surface);
-            stroke-width: 3.8;
-        }
-        
-        .circle {
-            fill: none;
-            stroke-width: 2.8;
-            stroke-linecap: round;
-            animation: progress 2s ease-out forwards;
-        }
-        
-        @keyframes progress {
-            0% { stroke-dasharray: 0 100; }
-        }
-        
-        .percentage {
-            fill: #fff;
-            font-family: 'Outfit', sans-serif;
-            font-size: 0.5em;
-            font-weight: 700;
-            text-anchor: middle;
-        }
-        
-        .score-excellent { stroke: var(--success); }
-        .score-good { stroke: var(--warning); }
-        .score-poor { stroke: var(--danger); }
     </style>
 </head>
 <body>
+    <!-- Ambient glowing backgrounds -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+
     <div class="container">
         <header>
             <div class="logo">
                 <div class="logo-icon">A</div>
-                <h1>ARTEMIS</h1>
+                ARTEMIS
             </div>
             <div class="status-badge">
-                <div class="pulse"></div>
+                <div class="pulse-dot"></div>
                 v1.2.0 OPENENV
             </div>
         </header>
 
         <section class="hero">
-            <div class="hero-text">
-                <h2>Autonomous SOC Triage</h2>
-                <p>A rigorous, deterministic benchmarking environment for evaluating AI agents against high-fidelity cybersecurity incidents.</p>
-            </div>
+            <h1>Autonomous SOC Triage</h1>
+            <p>A rigorous, deterministic benchmarking environment for evaluating AI agents against high-fidelity cybersecurity incidents.</p>
             <div class="hero-stats">
-                <div class="stat-box">
-                    <div class="stat-value">9</div>
-                    <div class="stat-label">Scenario Variants</div>
+                <div class="stat-pill">
+                    <span>9</span> Scenario Variants
                 </div>
-                <div class="stat-box">
-                    <div class="stat-value">3</div>
-                    <div class="stat-label">Difficulty Tiers</div>
+                <div class="stat-pill">
+                    <span>3</span> Difficulty Tiers
                 </div>
             </div>
         </section>
 
-        <main class="grid">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Live Simulation Console</div>
-                    <span style="font-size: 0.8rem; color: var(--text-dim);">OpenEnv Rest API</span>
-                </div>
-                
-                <div class="controls">
-                    <select id="taskSelect" class="task-select">
-                        <option value="false_positive_triage">🟡 TIER 1: False Positive Triage</option>
-                        <option value="brute_force_defense">🟠 TIER 2: Brute Force Defense</option>
-                        <option value="lateral_movement_detection">🔴 TIER 3: Lateral Movement</option>
-                    </select>
-                    <button id="runBtn" class="btn" onclick="runExpertDemo()">EXECUTE TASK</button>
-                    <button id="clearBtn" class="btn btn-outline" onclick="clearLogs()">CLEAR</button>
-                </div>
-                
-                <div class="gauge-container" id="gaugeContainer">
-                    <svg viewBox="0 0 36 36" class="circular-chart">
-                        <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                        <path class="circle score-excellent" id="gaugePath" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                        <text x="18" y="20.35" class="percentage" id="gaugeText">0%</text>
-                    </svg>
+        <main class="dashboard-grid">
+            <!-- Left Column controls -->
+            <div class="card-stack">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Simulation Console</div>
+                        <div class="card-subtitle">REST API</div>
+                    </div>
+                    <div class="controls-group">
+                        <select id="taskSelect">
+                            <option value="false_positive_triage">🟡 Tier 1: False Positive Triage</option>
+                            <option value="brute_force_defense">🟠 Tier 2: Brute Force Defense</option>
+                            <option value="lateral_movement_detection">🔴 Tier 3: Lateral Movement</option>
+                        </select>
+                        <div class="btn-group">
+                            <button id="runBtn" class="btn btn-primary" onclick="runExpertDemo()">Execute AI Script</button>
+                            <button id="clearBtn" class="btn btn-secondary" onclick="clearLogs()">Reset</button>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="inspector" class="inspector">// Environment state will appear here
-// Waiting for simulation start...</div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Agent State Evaluator</div>
+                        <div class="card-subtitle">Live Metric</div>
+                    </div>
+                    
+                    <div class="state-container">
+                        <!-- Initial Empty State -->
+                        <div id="emptyState" class="empty-state">
+                            // Standby. Awaiting execution trigger...
+                        </div>
+                        
+                        <!-- JSON Inspector -->
+                        <div id="inspector" class="inspector"></div>
+                        
+                        <!-- SVG Gauge -->
+                        <div id="gaugeContainer" class="gauge-container">
+                            <svg viewBox="0 0 36 36" class="circular-chart">
+                                <path class="circle-bg" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                <path class="circle score-excellent" id="gaugePath" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                <text x="18" y="19" class="percentage" id="gaugeText">0%</text>
+                                <text x="18" y="25" class="score-lbl">GRADED</text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Activity Feed</div>
-                </div>
-                <div id="terminal" class="terminal">
-                    <div class="log-entry">
-                        <span class="log-ts">[SYSTEM]</span> 
-                        <span class="log-msg">Artemis Engine initialized. Loading scenarios...</span>
+            <!-- Right Column Terminal -->
+            <div class="card" style="padding: 0; background: transparent; border: none; box-shadow: none;">
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="mac-dots">
+                            <div class="mac-dot close"></div>
+                            <div class="mac-dot min"></div>
+                            <div class="mac-dot max"></div>
+                        </div>
+                        <div class="terminal-title">agent-execution.log</div>
+                    </div>
+                    <div class="terminal-body" id="terminal">
+                        <div class="log-entry">
+                            <span class="ts">[00:00:00]</span> <span class="log-sys">Artemis Engine initialized. Loading scenario vectors...</span>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="card" style="grid-column: 1 / -1;">
+            <!-- Bottom Leaderboard -->
+            <div class="card leaderboard-card" style="grid-column: 1 / -1;">
                 <div class="card-header">
                     <div class="card-title">Global Leaderboard</div>
-                    <span style="font-size: 0.8rem; color: var(--text-dim);">Live API Sync</span>
+                    <div class="card-subtitle">Live API Sync</div>
                 </div>
-                <table class="leaderboard-table" id="leaderboard">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Agent Model</th>
-                            <th>T1 Easy</th>
-                            <th>T2 Medium</th>
-                            <th>T3 Hard</th>
-                            <th>Overall Avg</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lbBody">
-                        <tr><td colspan="6" style="text-align: center; color: var(--text-dim);">Loading leaderboard data...</td></tr>
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table id="leaderboard">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Agent Model</th>
+                                <th>T1 Easy</th>
+                                <th>T2 Medium</th>
+                                <th>T3 Hard</th>
+                                <th>Overall Avg</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lbBody">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">Connecting to evaluation server...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </main>
 
-        <footer class="footer">
-            Artemis Benchmark | Built for OpenEnv Hackathon 2026 | <a href="/docs" target="_blank">API Docs</a>
+        <footer>
+            Artemis Benchmark | Built for OpenEnv Hackathon 2026 | <a href="/docs" target="_blank">View API Specifications</a>
         </footer>
     </div>
 
     <script>
         const terminal = document.getElementById('terminal');
         const inspector = document.getElementById('inspector');
+        const emptyState = document.getElementById('emptyState');
         const runBtn = document.getElementById('runBtn');
         const taskSelect = document.getElementById('taskSelect');
         const gaugeContainer = document.getElementById('gaugeContainer');
         const gaugePath = document.getElementById('gaugePath');
         const gaugeText = document.getElementById('gaugeText');
 
-        // Fetch Leaderboard
+        function getTime() {
+            return new Date().toLocaleTimeString('en-US', { hour12: false });
+        }
+
         async function loadLeaderboard() {
             try {
                 const res = await fetch('/leaderboard');
@@ -597,52 +691,62 @@
                 
                 data.leaderboard.forEach(row => {
                     const tr = document.createElement('tr');
-                    tr.className = `rank-${row.rank}`;
+                    
+                    let rankClass = '';
+                    if (row.rank === 1) rankClass = 'rank-1';
+                    else if (row.rank === 2) rankClass = 'rank-2';
+                    else if (row.rank === 3) rankClass = 'rank-3';
+
                     tr.innerHTML = `
-                        <td><span class="rank-badge">${row.rank}</span></td>
+                        <td><div class="rank-wrapper ${rankClass}">${row.rank}</div></td>
                         <td class="model-name">${row.model}</td>
-                        <td class="score-val">${row.easy.toFixed(2)}</td>
-                        <td class="score-val">${row.medium.toFixed(2)}</td>
-                        <td class="score-val">${row.hard.toFixed(2)}</td>
-                        <td class="score-avg">${row.avg.toFixed(2)}</td>
+                        <td class="td-score">${row.easy.toFixed(2)}</td>
+                        <td class="td-score">${row.medium.toFixed(2)}</td>
+                        <td class="td-score">${row.hard.toFixed(2)}</td>
+                        <td class="td-avg">${row.avg.toFixed(2)}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             } catch (e) {
                 console.error("Leaderboard load error:", e);
-                document.getElementById('lbBody').innerHTML = '<tr><td colspan="6">Leaderboard sync failed.</td></tr>';
+                document.getElementById('lbBody').innerHTML = '<tr><td colspan="6" style="text-align: center;">Leaderboard sync failed.</td></tr>';
             }
         }
         
         loadLeaderboard();
 
-        function addLog(msg, type = '') {
-            const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+        function addLog(htmlString) {
             const entry = document.createElement('div');
-            entry.className = `log-entry ${type ? 'type-' + type : ''}`;
-            entry.innerHTML = `<span class="log-ts">[${time}]</span> <span class="log-msg">${msg}</span>`;
+            entry.className = `log-entry`;
+            entry.innerHTML = `<span class="ts">[${getTime()}]</span> ${htmlString}`;
             terminal.appendChild(entry);
             terminal.scrollTop = terminal.scrollHeight;
         }
 
         function clearLogs() {
             terminal.innerHTML = '';
-            addLog('Logs cleared.', 'reset');
-            inspector.textContent = '// Ready.';
+            addLog('<span class="log-sys">Cache cleared. Memory reset.</span>');
+            
+            // Reset Inspector View
+            inspector.style.display = 'none';
             gaugeContainer.style.display = 'none';
+            emptyState.style.display = 'flex';
+            gaugePath.setAttribute('stroke-dasharray', `0, 100`);
         }
 
         async function runExpertDemo() {
             runBtn.disabled = true;
+            
+            // UI State switch to JSON view
+            emptyState.style.display = 'none';
             gaugeContainer.style.display = 'none';
             inspector.style.display = 'block';
             
             const task = taskSelect.value;
-            // Use random seed for the new variant engine
             const seed = Math.floor(Math.random() * 1000); 
 
             try {
-                addLog(`Executing standard agent against ${task} (seed ${seed})...`, 'reset');
+                addLog(`<span class="log-sys">Initializing strategy engine for task <b>${task}</b> (seed: ${seed})</span>`);
                 const resetRes = await fetch('/reset', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -650,19 +754,14 @@
                 });
                 const resetData = await resetRes.json();
                 const epId = resetData.episode_id;
-                addLog(`RESET OK. EpID: ${epId}. Live scenario variant generated.`, 'reset');
+                
+                addLog(`<span class="log-sys">Connection established. EpID: <b>${epId}</b>. Procedural variant loaded.</span>`);
                 inspector.textContent = JSON.stringify(resetData.observation, null, 2);
 
-                // For the demo, we will simulate the LLM agent by sending predetermined actions that work on variant logic
-                // But truthfully, the "Intelligent Baseline" prompt handles it. Since we can't run the python inference 
-                // easily from browser JS without triggering it back end server side (which we haven't built), we'll simulate.
-                
                 const alerts = resetData.observation.current_alerts || [];
-                const first_ip = alerts.length > 0 ? alerts[0].source_ip : '';
-                const first_user = alerts.length > 0 ? alerts[0].source_user : '';
-                const first_id = alerts.length > 0 ? alerts[0].id : '';
-
                 let actions = [];
+                
+                // Deduplicated Expert Demo Logic
                 if (task === 'false_positive_triage') {
                     alerts.forEach(alert => {
                         if (alert.source_user) actions.push({ action_type: 'fetch_logs', user_id: alert.source_user, reason: "Checking context" });
@@ -699,9 +798,9 @@
                 }
 
                 for (let i = 0; i < actions.length; i++) {
-                    await new Promise(r => setTimeout(r, 800));
+                    await new Promise(r => setTimeout(r, 700));
                     const action = actions[i];
-                    addLog(`[ACTION] ${action.action_type}...`, 'step');
+                    addLog(`<span class="log-cmd">EXECUTE:</span> ${action.action_type}()`);
                     
                     const stepRes = await fetch('/step', {
                         method: 'POST',
@@ -710,14 +809,15 @@
                     });
                     const stepData = await stepRes.json();
                     
+                    const rewClass = stepData.reward > 0 ? 'log-rew-pos' : 'log-rew-neg';
                     const rewStr = stepData.reward > 0 ? '+' + stepData.reward.toFixed(2) : stepData.reward.toFixed(2);
-                    addLog(`Reward: <span class="type-reward">${rewStr}</span> | Done: ${stepData.done}`, 'step');
+                    
+                    addLog(`Received Reward: <span class="${rewClass}">${rewStr}</span>`);
                     inspector.textContent = JSON.stringify(stepData.observation, null, 2);
                 }
 
-                await new Promise(r => setTimeout(r, 500));
+                await new Promise(r => setTimeout(r, 600));
                 
-                // Fetch actual grader score
                 const gradeRes = await fetch('/grade', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -726,22 +826,39 @@
                 const gradeData = await gradeRes.json();
                 
                 const score = gradeData.score;
-                addLog(`GRADED SCORE: ${score.toFixed(3)}`, 'done');
+                addLog(`<div class="log-done">EVALUATION COMPLETE | FINAL RAW SCORE: ${score.toFixed(3)}</div>`);
                 
-                // Display gauge
+                // Show Gauge
                 inspector.style.display = 'none';
                 gaugeContainer.style.display = 'flex';
+                
                 let roundedPercent = Math.round(score * 100);
-                gaugeText.textContent = `${roundedPercent}%`;
+                
+                // Animate numbers up
+                let currentVal = 0;
+                let duration = 1500;
+                let steps = 30;
+                let stepTime = Math.abs(Math.floor(duration / steps));
+                let timer = setInterval(() => {
+                    currentVal += Math.ceil(roundedPercent / steps);
+                    if (currentVal >= roundedPercent) {
+                        currentVal = roundedPercent;
+                        clearInterval(timer);
+                    }
+                    gaugeText.textContent = `${currentVal}%`;
+                }, stepTime);
+
+                // Set SVG arc length
                 gaugePath.setAttribute('stroke-dasharray', `${roundedPercent}, 100`);
                 
+                // Color formatting
                 gaugePath.className.baseVal = "circle";
                 if (score > 0.8) gaugePath.classList.add("score-excellent");
                 else if (score > 0.5) gaugePath.classList.add("score-good");
                 else gaugePath.classList.add("score-poor");
 
             } catch (err) {
-                addLog(`ERROR: ${err.message}`, 'danger');
+                addLog(`<span class="log-rew-neg">CRITICAL ERROR: ${err.message}</span>`);
             } finally {
                 runBtn.disabled = false;
             }
