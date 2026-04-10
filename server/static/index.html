@@ -670,15 +670,31 @@
                         actions.push({ action_type: 'resolve_alert', alert_id: alert.id, reason: "Verified false positive." });
                     });
                 } else if (task === 'brute_force_defense') {
+                    let seenIps = new Set();
+                    let seenUsers = new Set();
                     alerts.forEach(alert => {
-                        if (alert.source_ip) actions.push({ action_type: 'isolate_ip', ip_address: alert.source_ip, reason: "Blocking attacker IP." });
-                        if (alert.source_user) actions.push({ action_type: 'isolate_user', user_id: alert.source_user, reason: "Securing compromised account." });
+                        if (alert.source_ip && !seenIps.has(alert.source_ip)) {
+                            seenIps.add(alert.source_ip);
+                            actions.push({ action_type: 'isolate_ip', ip_address: alert.source_ip, reason: "Blocking attacker IP." });
+                        }
+                        if (alert.source_user && !seenUsers.has(alert.source_user)) {
+                            seenUsers.add(alert.source_user);
+                            actions.push({ action_type: 'isolate_user', user_id: alert.source_user, reason: "Securing compromised account." });
+                        }
                     });
                 } else {
+                    let seenIps = new Set();
+                    let seenUsers = new Set();
                     alerts.forEach(alert => {
-                        if (alert.source_user) actions.push({ action_type: 'fetch_logs', user_id: alert.source_user, reason: "Investigating pivot" });
-                        if (alert.source_ip) actions.push({ action_type: 'isolate_ip', ip_address: alert.source_ip, reason: "Isolating infected machine." });
-                        if (alert.source_user) actions.push({ action_type: 'isolate_user', user_id: alert.source_user, reason: "Isolating compromised account." });
+                        if (alert.source_user && !seenUsers.has(alert.source_user)) {
+                             seenUsers.add(alert.source_user);
+                             actions.push({ action_type: 'fetch_logs', user_id: alert.source_user, reason: "Investigating pivot" });
+                             actions.push({ action_type: 'isolate_user', user_id: alert.source_user, reason: "Isolating compromised account." });
+                        }
+                        if (alert.source_ip && !seenIps.has(alert.source_ip)) {
+                             seenIps.add(alert.source_ip);
+                             actions.push({ action_type: 'isolate_ip', ip_address: alert.source_ip, reason: "Isolating infected machine." });
+                        }
                     });
                 }
 
