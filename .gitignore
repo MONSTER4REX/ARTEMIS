@@ -1,0 +1,10 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Project & Security Exclusions
+CONVERSATION_HISTORY.txt
+.env
+.gemini/
+*.log
+scripts/temp/

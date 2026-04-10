@@ -1,0 +1,27 @@
+version: "1.0.0"
+name: "artemis-soc-analyst"
+description: "A simulator for evaluating AI agents in Security Operations Center alert triage scenarios."
+tasks:
+  - id: "false_positive_triage"
+    difficulty: "easy"
+    description: "Identify and dismiss noise alerts from a dashboard."
+  - id: "brute_force_defense"
+    difficulty: "medium"
+    description: "Detect and mitigate coordinated brute force attacks."
+  - id: "lateral_movement_detection"
+    difficulty: "hard"
+    description: "Uncover and isolate sophisticated multi-stage lateral movement."
+runtime: "docker"
+port: 7860
+base_url: "https://huggingface.co/spaces/Rudreshrx/artemis"
+interface:
+  reset: "POST /reset"
+  step: "POST /step"
+  state: "GET /state"
+  docs: "GET /docs"
+score_range: [0.0, 1.0]
+deterministic: true
+partial_credit: true
+baseline_agent: "inference.py"
+model_compatibility: ["gpt-4", "claude-3", "llama-3-70b"]
+runtime_limit: 1200

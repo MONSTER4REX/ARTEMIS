@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artemis | SOC Triage Benchmark</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0c10;
+            --surface: #161b22;
+            --primary: #58a6ff;
+            --success: #3fb950;
+            --danger: #f85149;
+            --text: #c9d1d9;
+            --text-dim: #8b949e;
+            --border: #30363d;
+            --accent: #1f6feb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #fff;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: #1c2128;
+            padding: 0.4rem 0.8rem;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(63, 185, 80, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(63, 185, 80, 0); }
+        }
+
+        .hero {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .hero h2 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, var(--text-dim));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background: #2b84ff;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--text-dim);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .terminal {
+            font-family: 'JetBrains Mono', monospace;
+            background: #010409;
+            border-radius: 8px;
+            padding: 1.25rem;
+            font-size: 0.85rem;
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            scroll-behavior: smooth;
+        }
+
+        .log-entry {
+            margin-bottom: 0.5rem;
+            border-left: 2px solid transparent;
+            padding-left: 0.75rem;
+        }
+
+        .log-ts { color: var(--text-dim); }
+        .log-type { font-weight: bold; }
+        .type-reset { color: var(--primary); border-left-color: var(--primary); }
+        .type-step { color: var(--accent); border-left-color: var(--accent); }
+        .type-reward { color: var(--success); }
+        .type-done { color: #f2cc60; }
+
+        .inspector {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #79c0ff;
+            white-space: pre-wrap;
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+
+        .task-select {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            margin-right: 0.5rem;
+            outline: none;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+        .footer {
+            margin-top: 4rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">A</div>
+                <h1>ARTEMIS</h1>
+            </div>
+            <div class="status-badge">
+                <div class="pulse"></div>
+                SYSTEM ONLINE
+            </div>
+        </header>
+
+        <section class="hero">
+            <h2>OpenEnv SOC Benchmark</h2>
+            <p>Evaluating autonomous cybersecurity agents through high-fidelity Security Operations Center incident triage.</p>
+        </section>
+
+        <main class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Expert Simulation Control</div>
+                        <p style="font-size: 0.85rem; color: var(--text-dim);">Demonstrate reset/step/state mechanics instantly.</p>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <select id="taskSelect" class="task-select">
+                        <option value="false_positive_triage">False Positive Triage (Easy)</option>
+                        <option value="brute_force_defense">Brute Force Defense (Medium)</option>
+                        <option value="lateral_movement_detection">Lateral Movement (Hard)</option>
+                    </select>
+                    <button id="runBtn" class="btn" onclick="runExpertDemo()">RUN EXPERT DEMO</button>
+                    <button id="clearBtn" class="btn btn-outline" onclick="clearLogs()">CLEAR</button>
+                </div>
+
+                <div id="inspector" class="inspector">No active episode. Ready for simulation.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Environment Activity Log</div>
+                </div>
+                <div id="terminal" class="terminal">
+                    <div class="log-entry">
+                        <span class="log-ts">[00:00:00]</span> 
+                        <span class="log-msg">Welcome to Artemis v1.1.0</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-ts">[00:00:00]</span> 
+                        <span class="log-msg">Interface: OpenEnv Spec v1.1</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            Built for the OpenEnv Hackathon | <a href="/docs" target="_blank">API Documentation</a> | <a href="/status" target="_blank">System Status JSON</a>
+        </footer>
+    </div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const inspector = document.getElementById('inspector');
+        const runBtn = document.getElementById('runBtn');
+        const taskSelect = document.getElementById('taskSelect');
+
+        function addLog(msg, type = '') {
+            const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type ? 'type-' + type : ''}`;
+            entry.innerHTML = `<span class="log-ts">[${time}]</span> <span class="log-msg">${msg}</span>`;
+            terminal.appendChild(entry);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function clearLogs() {
+            terminal.innerHTML = '<div class="log-entry"><span class="log-ts">[--:--:--]</span> Logs cleared.</div>';
+            inspector.textContent = 'No active episode.';
+        }
+
+        async function runExpertDemo() {
+            runBtn.disabled = true;
+            const task = taskSelect.value;
+            const seed = 42;
+
+            try {
+                // --- RESET ---
+                addLog(`Initalizing task: ${task}...`, 'reset');
+                const resetRes = await fetch('/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task, seed })
+                });
+                const resetData = await resetRes.json();
+                const epId = resetData.episode_id;
+                addLog(`RESET SUCCESS. Episode ID: ${epId}`, 'reset');
+                inspector.textContent = JSON.stringify(resetData.observation, null, 2);
+
+                // Define hardcoded actions based on task
+                let actions = [];
+                if (task === 'false_positive_triage') {
+                    actions = [
+                        { action_type: 'resolve_alert', alert_id: resetData.observation.current_alerts[0].id, reason: "Authorized pentest IP." },
+                        { action_type: 'resolve_alert', alert_id: resetData.observation.current_alerts[1].id, reason: "Known research crawler." }
+                    ];
+                } else if (task === 'brute_force_defense') {
+                    actions = [
+                        { action_type: 'fetch_logs', ip_address: '203.0.113.1', reason: "Checking login pattern." },
+                        { action_type: 'isolate_ip', ip_address: '203.0.113.1', reason: "Confirmed brute force." }
+                    ];
+                } else {
+                    actions = [
+                        { action_type: 'fetch_logs', user_id: 'sarah_dev', reason: "Investigating unusual login." },
+                        { action_type: 'isolate_user', user_id: 'sarah_dev', reason: "Confirmed credential theft." }
+                    ];
+                }
+
+                // --- STEPS ---
+                for (let i = 0; i < actions.length; i++) {
+                    await new Promise(r => setTimeout(r, 1200)); // Dramatic pause
+                    const action = actions[i];
+                    addLog(`STEP ${i+1}: Executing ${action.action_type}...`, 'step');
+                    
+                    const stepRes = await fetch('/step', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ episode_id: epId, action })
+                    });
+                    const stepData = await stepRes.json();
+                    
+                    addLog(`STEP ${i+1} RESULT: Reward <span class="type-reward">${stepData.reward.toFixed(2)}</span> | Done: <span class="type-done">${stepData.done}</span>`, 'step');
+                    inspector.textContent = JSON.stringify(stepData.observation, null, 2);
+                }
+
+                // --- FINAL STATE ---
+                await new Promise(r => setTimeout(r, 800));
+                const stateRes = await fetch(`/state?episode_id=${epId}`);
+                const stateData = await stateRes.json();
+                addLog(`DEMO COMPLETE. Final Cumulative Reward: ${stateData.cumulative_reward.toFixed(2)}`, 'done');
+
+            } catch (err) {
+                addLog(`ERROR: ${err.message}`, 'danger');
+            } finally {
+                runBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
