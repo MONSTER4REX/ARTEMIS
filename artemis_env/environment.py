@@ -52,10 +52,12 @@ class SOCEnv:
         state.current_step += 1
         if state.done or state.current_step > state.scenario.max_steps:
              state.done = True
+             final_score = compute_final_score(state)
              return StepResult(
                 observation=self._build_observation(state),
                 reward=0.0,
                 done=True,
+                score=final_score,
                 info={"message": "Episode already finished."}
             )
         is_valid, error_msg = validate_action(action, state)
@@ -86,10 +88,12 @@ class SOCEnv:
         state.rewards.append(reward_val)
         if self._is_task_complete(state):
             state.done = True
+        final_score = compute_final_score(state) if state.done else None
         return StepResult(
             observation=self._build_observation(state),
             reward=reward_val,
             done=state.done,
+            score=final_score,
             info={
                 "action_explanation": reward_detail.explanation,
                 "step_reward": reward_val
@@ -99,14 +103,16 @@ class SOCEnv:
         if episode_id not in self.active_episodes:
             return None
         state = self.active_episodes[episode_id]
+        final_score = compute_final_score(state) if state.done else None
         return {
             "episode_id": episode_id,
             "task_name": state.scenario.task_name,
             "step_count": state.current_step,
             "actions_taken": state.actions_taken,
             "cumulative_reward": sum(state.rewards),
+            "score": final_score,
+            "done": state.done,
             "current_observation": self._build_observation(state),
-            "done": state.done
         }
     def _apply_action_effects(self, action: SOCAction, state: EpisodeState):
         if action.action_type == ActionType.RESOLVE_ALERT:

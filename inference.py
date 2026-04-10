@@ -92,16 +92,23 @@ def compact(obj: dict) -> str:
 
 # --- Episode Runner ---
 
-def run_episode():
-    task = "false_positive_triage"
-    env = "artemis"
+ALL_TASKS = [
+    "false_positive_triage",
+    "brute_force_defense",
+    "lateral_movement_detection",
+]
+
+
+def run_episode(task: str):
+    env_name = "artemis"
     max_steps = 8
 
-    log_start(task=task, env=env, model=MODEL_NAME)
+    log_start(task=task, env=env_name, model=MODEL_NAME)
 
     rewards: list[float] = []
     steps = 0
     success = False
+    score = None
 
     try:
         reset_res = requests.post(
@@ -133,20 +140,52 @@ def run_episode():
 
             rewards.append(reward)
 
-            # [STEP] emitted immediately after env.step() returns
             log_step(steps, action_str, reward, done, error)
 
             if done:
+                score = step_data.get("score", None)
                 success = sum(rewards) > 0.0
                 break
+
+        # Fetch graded score from the /grade endpoint
+        if score is None:
+            try:
+                grade_res = requests.post(
+                    f"{ENV_URL}/grade",
+                    json={"episode_id": episode_id},
+                    timeout=10,
+                )
+                if grade_res.status_code == 200:
+                    score = grade_res.json().get("score", None)
+            except Exception:
+                pass
+
+        if score is not None:
+            print(
+                f"[SCORE] task={task} score={score:.4f}",
+                flush=True,
+            )
 
     except Exception as e:
         log_step(max(1, steps + 1), "error", 0.0, True, str(e))
 
     finally:
-        # [END] always emitted, even on exception
         log_end(success=success, steps=steps, rewards=rewards)
+
+    return score
+
+
+def main():
+    print(f"[INFO] Running {len(ALL_TASKS)} tasks against {ENV_URL}", flush=True)
+    scores = {}
+    for task in ALL_TASKS:
+        task_score = run_episode(task)
+        scores[task] = task_score
+    print("[SUMMARY]", flush=True)
+    for t, s in scores.items():
+        status_str = f"{s:.4f}" if s is not None else "FAILED"
+        print(f"  {t}: {status_str}", flush=True)
 
 
 if __name__ == "__main__":
-    run_episode()
+    main()

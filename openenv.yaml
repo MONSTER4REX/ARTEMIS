@@ -5,19 +5,24 @@ tasks:
   - id: "false_positive_triage"
     difficulty: "easy"
     description: "Identify and dismiss noise alerts from a dashboard."
+    grader: true
   - id: "brute_force_defense"
     difficulty: "medium"
     description: "Detect and mitigate coordinated brute force attacks."
+    grader: true
   - id: "lateral_movement_detection"
     difficulty: "hard"
     description: "Uncover and isolate sophisticated multi-stage lateral movement."
+    grader: true
 runtime: "docker"
 port: 7860
 base_url: "https://huggingface.co/spaces/Rudreshrx/artemis"
 interface:
   reset: "POST /reset"
   step: "POST /step"
+  grade: "POST /grade"
   state: "GET /state"
+  tasks: "GET /tasks"
   docs: "GET /docs"
 score_range: [0.0, 1.0]
 deterministic: true

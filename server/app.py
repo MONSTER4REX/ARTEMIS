@@ -13,7 +13,10 @@ from artemis_env.models import (
     StepRequest,
     StepResult,
     StateResult,
+    GradeRequest,
+    GradeResult,
 )
+from artemis_env.graders import compute_final_score
 env = SOCEnv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -98,6 +101,49 @@ async def get_state(episode_id: str):
             detail=f"Episode '{episode_id}' not found."
         )
     return result
+
+@app.post("/grade", response_model=GradeResult)
+async def grade_episode(request: GradeRequest):
+    if request.episode_id not in env.active_episodes:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Episode '{request.episode_id}' not found."
+        )
+    state = env.active_episodes[request.episode_id]
+    score = compute_final_score(state)
+    return GradeResult(
+        episode_id=request.episode_id,
+        task_name=state.scenario.task_name,
+        score=score,
+        steps=state.current_step,
+        cumulative_reward=sum(state.rewards),
+    )
+
+@app.get("/tasks")
+async def list_tasks():
+    return {
+        "tasks": [
+            {
+                "id": "false_positive_triage",
+                "difficulty": "easy",
+                "description": "Identify and dismiss noise alerts from a dashboard.",
+                "grader": True,
+            },
+            {
+                "id": "brute_force_defense",
+                "difficulty": "medium",
+                "description": "Detect and mitigate coordinated brute force attacks.",
+                "grader": True,
+            },
+            {
+                "id": "lateral_movement_detection",
+                "difficulty": "hard",
+                "description": "Uncover and isolate sophisticated multi-stage lateral movement.",
+                "grader": True,
+            },
+        ]
+    }
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(

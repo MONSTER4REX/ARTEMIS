@@ -107,6 +107,7 @@ class StepResult(BaseModel):
     observation: SOCObservation
     reward: float = Field(..., ge=-1.0, le=1.5)
     done: bool
+    score: Optional[float] = Field(None, description="Final graded score in (0,1) when done=True")
     info: Dict[str, Any] = Field(default_factory=dict)
     error: Optional[str] = None
 class StateRequest(BaseModel):
@@ -117,7 +118,17 @@ class StateResult(BaseModel):
     step_count: int
     actions_taken: List[Dict[str, Any]] = Field(default_factory=list)
     cumulative_reward: float = 0.0
+    score: Optional[float] = Field(None, description="Final graded score in (0,1) when done")
+    done: bool = False
     current_observation: SOCObservation
+class GradeRequest(BaseModel):
+    episode_id: str = Field(..., description="Episode to grade")
+class GradeResult(BaseModel):
+    episode_id: str
+    task_name: str
+    score: float = Field(..., description="Final graded score strictly in (0,1)")
+    steps: int
+    cumulative_reward: float
 class GroundTruth(BaseModel):
     false_positives: List[str] = Field(default_factory=list, description="Alert IDs that are false positives")
     real_threats: List[str] = Field(default_factory=list, description="Alert IDs that are genuine threats")
